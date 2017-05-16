@@ -223,7 +223,9 @@ endif()
 # all listed variables are TRUE
 include(FindPackageHandleStandardArgs)
 
-if (${PXR_MAYA_API_ONLY} AND NOT ${PXR_MAYA_API_ONLY})
+# LCA:cmake erro fixing
+#if (${PXR_MAYA_API_ONLY} AND NOT ${PXR_MAYA_API_ONLY})
+#if (${PXR_MAYA_API_ONLY})
     find_package_handle_standard_args(Maya
         REQUIRED_VARS
             MAYA_EXECUTABLE

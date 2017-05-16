@@ -192,11 +192,12 @@ HdRenderContextCaps::_LoadCaps()
     if (GLEW_ARB_multi_draw_indirect) {
         multiDrawIndirectEnabled = true;
     }
-#if defined(GLEW_VERSION_4_5)  // glew 1.11 or newer (usd requirement is 1.10)
+// LCA:remove glew 1.11,those lines will cause maya2017 unloadable.
+/*#if defined(GLEW_VERSION_4_5)  // glew 1.11 or newer (usd requirement is 1.10)
     if (GLEW_ARB_direct_state_access) {
         directStateAccessEnabled = true;
     }
-#endif
+#endif*/
     if (GLEW_EXT_direct_state_access) {
         directStateAccessEnabled = true;
     }
