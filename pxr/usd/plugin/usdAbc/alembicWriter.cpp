@@ -46,7 +46,6 @@
 #include <boost/function.hpp>
 #include <boost/functional/hash.hpp>
 #include <algorithm>
-#include <memory>
 #include <set>
 #include <type_traits>
 
@@ -2269,8 +2268,8 @@ _WriteArbGeomParams(_PrimWriterContext* context)
     const _Parent& parent = context->GetParent();
     _WriteNamespacedPropertyGroup(context,
                                   UsdAbcPropertyNames->primvars,
-                                  std::bind(&_Parent::GetArbGeomParams,
-                                            std::cref(parent)));
+                                  boost::bind(&_Parent::GetArbGeomParams,
+                                              boost::cref(parent)));
 }
 
 static
@@ -2282,8 +2281,8 @@ _WriteUserProperties(_PrimWriterContext* context)
     const _Parent& parent = context->GetParent();
     _WriteNamespacedPropertyGroup(context,
                                   UsdAbcPropertyNames->userProperties,
-                                  std::bind(&_Parent::GetUserProperties,
-                                            std::cref(parent)));
+                                  boost::bind(&_Parent::GetUserProperties,
+                                              boost::cref(parent)));
     }
 
 static
