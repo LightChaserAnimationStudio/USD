@@ -37,6 +37,8 @@
 
 #include "pxr/base/arch/demangle.h"
 
+#include <boost/bind.hpp>
+#include <boost/function.hpp>
 #include <boost/noncopyable.hpp>
 #include "pxr/base/tf/hashmap.h"
 
@@ -139,8 +141,9 @@ TfEnum::_AddName(TfEnum val, const string &valName, const string &displayName)
     r._typeNameToNameVector[val.GetType().name()].push_back(shortName);
     r._typeNameToType[typeName] = &val.GetType();
 
-    TfRegistryManager::GetInstance().AddFunctionForUnload(
-        [&r, val]() { r._Remove(val); });
+    boost::function<void ()> fn =
+        boost::bind(&Tf_EnumRegistry::_Remove, &r, val);
+    TfRegistryManager::GetInstance().AddFunctionForUnload(fn);
 }
 
 string

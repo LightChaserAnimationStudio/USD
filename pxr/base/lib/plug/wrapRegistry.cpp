@@ -31,6 +31,7 @@
 #include "pxr/base/tf/pySingleton.h"
 #include "pxr/base/tf/stringUtils.h"
 
+#include <boost/bind.hpp>
 #include <boost/range.hpp>
 #include <boost/python.hpp>
 
@@ -123,7 +124,7 @@ string PluginNames(Range const &range) {
     using std::distance;
     vector<string> names(distance(boost::begin(range), boost::end(range)));
     transform(boost::begin(range), boost::end(range), names.begin(),
-              [](PlugPluginPtr const &plug) { return plug->GetName(); });
+              boost::bind(&PlugPlugin::GetName, _1));
     return TfStringJoin(names.begin(), names.end(), ", ");
 }
 
@@ -143,7 +144,7 @@ void _LoadPluginsConcurrently(PluginPredicateFn pred,
     // Shuffle all already loaded plugins to the end.
     PlugPluginPtrVector::iterator alreadyLoaded =
         partition(plugins.begin(), plugins.end(),
-                  [](PlugPluginPtr const &plug) { return !plug->IsLoaded(); });
+                  !boost::bind(&PlugPlugin::IsLoaded, _1));
 
     // Report any already loaded plugins as skipped.
     if (verbose && alreadyLoaded != plugins.end()) {

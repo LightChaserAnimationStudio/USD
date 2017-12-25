@@ -34,7 +34,7 @@
 #include "pxr/base/work/threadLimits.h"
 #include <tbb/task_arena.h>
 #include <tbb/task_group.h>
-#include <functional>
+#include <boost/bind.hpp>
 #include <fstream>
 #include <regex>
 #include <set>
@@ -43,8 +43,8 @@ PXR_NAMESPACE_OPEN_SCOPE
 
 namespace {
 
-typedef std::function<bool (const std::string&)> AddVisitedPathCallback;
-typedef std::function<void (const Plug_RegistrationMetadata&)> AddPluginCallback;
+typedef boost::function<bool (const std::string&)> AddVisitedPathCallback;
+typedef boost::function<void (const Plug_RegistrationMetadata&)> AddPluginCallback;
 
 TF_DEFINE_PRIVATE_TOKENS(_Tokens,
     // Filename tokens
@@ -136,9 +136,7 @@ _AddPlugin(
 
     if (metadata.type != Plug_RegistrationMetadata::UnknownType) {
         // Notify via callback.
-        context->taskArena.Run([context, metadata]() {
-                context->addPlugin(metadata);
-            });
+        context->taskArena.Run(boost::bind(context->addPlugin, metadata));
     }
 }
 
@@ -263,9 +261,8 @@ _ReadPlugInfo(_ReadContext* context, std::string pathname)
                         _MergePaths(pathname, includes[j].GetString(),
                                     keepTrailingSlash);
                     context->taskArena.Run(
-                        [context, newPathname]() {
-                            _ReadPlugInfoWithWildcards(context, newPathname);
-                        });
+                        boost::bind(_ReadPlugInfoWithWildcards,
+                                    context, newPathname));
                 }
             }
         }
@@ -338,18 +335,15 @@ _TraverseDirectory(
     for (const auto& f : filenames) {
         const std::string path = TfStringCatPaths(dirname, f);
         if (std::regex_match(path, *dirRegex)) {
-            context->taskArena.Run([context, path]() {
-                    _ReadPlugInfo(context, path);
-                });
+            context->taskArena.Run(boost::bind(_ReadPlugInfo, context, path));
             return;
         }
     }
 
     for (const auto& d : dirnames) {
         const std::string path = TfStringCatPaths(dirname, d);
-        context->taskArena.Run([context, path, dirRegex]() {
-                _TraverseDirectory(context, path, dirRegex);
-            });
+        context->taskArena.Run(
+            boost::bind(_TraverseDirectory, context, path, dirRegex));
     }
 }
 
@@ -392,9 +386,7 @@ _ReadPlugInfoWithWildcards(_ReadContext* context, const std::string& pathname)
 
         // Yes, no recursive searches so do the glob.
         for (const auto& match : TfGlob(pathname, 0)) {
-            context->taskArena.Run([context, match]() {
-                    _ReadPlugInfo(context, match);
-                });
+            context->taskArena.Run(boost::bind(_ReadPlugInfo, context, match));
         }
         return;
     }
@@ -430,9 +422,8 @@ _ReadPlugInfoWithWildcards(_ReadContext* context, const std::string& pathname)
     // Walk filesystem.
     TF_DEBUG(PLUG_INFO_SEARCH).
         Msg("Recursively walking plugin info path %s\n", pathname.c_str());
-    context->taskArena.Run([context, dirname, re]() {
-            _TraverseDirectory(context, dirname, re);
-        });
+    context->taskArena.Run(boost::bind(_TraverseDirectory, 
+                                       context, dirname, re));
 }
 
 // Helper for running tasks.
@@ -455,16 +446,13 @@ _MakeRun(tbb::task_group *group, const Fn& fn)
 // tbb::task_arena, to ensure that when we wait, we only wait for our own tasks.
 // Otherwise if we run an unrelated task in the thread that holds our lock that
 // winds up trying to take the lock we get deadlock.
-class _TaskArenaImpl {
-    _TaskArenaImpl(_TaskArenaImpl const &) = delete;
-    _TaskArenaImpl &operator=(_TaskArenaImpl const &) = delete;
+class _TaskArenaImpl : boost::noncopyable {
 public:
     _TaskArenaImpl();
     ~_TaskArenaImpl();
 
     /// Schedule \p fn to run.
-    template <class Fn>
-    void Run(const Fn &fn);
+    void Run(const boost::function<void()>& fn);
 
     /// Wait for all scheduled tasks to complete.
     void Wait();
@@ -484,9 +472,8 @@ _TaskArenaImpl::~_TaskArenaImpl()
     Wait();
 }
 
-template <class Fn>
 void
-_TaskArenaImpl::Run(Fn const &fn)
+_TaskArenaImpl::Run(const boost::function<void()>& fn)
 {
     _arena.execute(_MakeRun(&_group, fn));
 }
@@ -494,7 +481,7 @@ _TaskArenaImpl::Run(Fn const &fn)
 void
 _TaskArenaImpl::Wait()
 {
-    _arena.execute([this]() { _group.wait(); });
+    _arena.execute(boost::bind(&tbb::task_group::wait, &_group));
 }
 
 } // anonymous namespace
@@ -516,9 +503,8 @@ Plug_TaskArena::~Plug_TaskArena()
     // Do nothing
 }
 
-template <class Fn>
 void
-Plug_TaskArena::Run(Fn const &fn)
+Plug_TaskArena::Run(const boost::function<void()>& fn)
 {
     if (_impl) {
         _impl->Run(fn);
@@ -726,12 +712,12 @@ Plug_ReadPlugInfo(
         // as directories.
         if (!pathname.empty() && *pathname.rbegin() != '/') {
             context.taskArena.Run(
-                std::bind(_ReadPlugInfoWithWildcards,
-                          &context, pathname + "/"));
+                boost::bind(_ReadPlugInfoWithWildcards, &context,
+                            pathname + "/"));
         }
         else {
             context.taskArena.Run(
-                std::bind(_ReadPlugInfoWithWildcards, &context, pathname));
+                boost::bind(_ReadPlugInfoWithWildcards, &context, pathname));
         }
     }
     context.taskArena.Wait();

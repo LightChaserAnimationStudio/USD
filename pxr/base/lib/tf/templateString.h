@@ -30,10 +30,12 @@
 
 #include "pxr/base/tf/api.h"
 
+#include <boost/shared_ptr.hpp>
+#include <boost/noncopyable.hpp>
+
 #include <tbb/spin_mutex.h>
 
 #include <map>
-#include <memory>
 #include <string>
 #include <vector>
 
@@ -128,11 +130,8 @@ private:
     void _EmitParseErrors() const;
 
     // Structure side-allocated and shared between copies.
-    struct _Data
+    struct _Data : boost::noncopyable
     {
-        _Data(_Data const &) = delete;
-        _Data &operator=(_Data const &) = delete;
-
         _Data() : parsed(false) {}
 
         std::string template_;
@@ -142,7 +141,7 @@ private:
         mutable tbb::spin_mutex mutex;
     };
 
-    std::shared_ptr<_Data> _data;
+    boost::shared_ptr<_Data> _data;
 };
 
 PXR_NAMESPACE_CLOSE_SCOPE

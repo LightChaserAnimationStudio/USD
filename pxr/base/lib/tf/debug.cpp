@@ -37,12 +37,18 @@
 #include "pxr/base/arch/demangle.h"
 #include "pxr/base/arch/export.h"
 
+#include <boost/bind.hpp>
+#include <boost/function.hpp>
+
 #include <tbb/spin_mutex.h>
 
 #include <atomic>
 #include <algorithm>
 #include <map>
 #include <set>
+
+using boost::function;
+using boost::bind;
 
 using std::string;
 using std::set;
@@ -102,8 +108,9 @@ public:
             _table[name] = data;
         }
         
-        TfRegistryManager::GetInstance().AddFunctionForUnload(
-            [this, name]() { _Remove(name); });
+        function<void ()> fn =
+            bind(&Tf_DebugSymbolRegistry::_Remove, this, name);
+        TfRegistryManager::GetInstance().AddFunctionForUnload(fn);
 
         TF_FOR_ALL(i, _debugTokens)
             _Set(*i, &name, NULL);

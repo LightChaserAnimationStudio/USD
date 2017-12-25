@@ -27,6 +27,9 @@
 #include "pxr/base/arch/defines.h"
 #include "pxr/base/arch/mallocHook.h"
 
+#include <boost/bind.hpp>
+#include <boost/function.hpp>
+
 #include <mutex>
 #include <thread>
 #include <vector>
@@ -36,6 +39,9 @@ PXR_NAMESPACE_USING_DIRECTIVE
 // The TfMallocTag code depends upon the Linux memory allocator, ptmalloc3.
 // Turning this test off for any other platforms for now.
 #if defined(ARCH_OS_LINUX)
+
+using boost::bind;
+using boost::function;
 
 using std::vector;
 using std::string;

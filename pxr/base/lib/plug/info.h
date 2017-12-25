@@ -28,8 +28,8 @@
 #include "pxr/base/arch/attributes.h"
 #include "pxr/base/js/value.h"
 
-#include <functional>
-#include <memory>
+#include <boost/function.hpp>
+#include <boost/scoped_ptr.hpp>
 #include <string>
 #include <vector>
 
@@ -70,15 +70,14 @@ public:
     ~Plug_TaskArena();
 
     /// Schedule \p fn to run.
-    template <class Fn>
-    void Run(Fn const &fn);
+    void Run(const boost::function<void()>& fn);
 
     /// Wait for all scheduled tasks to complete.
     void Wait();
 
 private:
     class _Impl;
-    std::unique_ptr<_Impl> _impl;
+    boost::scoped_ptr<_Impl> _impl;
 };
 
 /// Reads several plugInfo files, recursively loading any included files.
@@ -93,8 +92,8 @@ private:
 void
 Plug_ReadPlugInfo(
     const std::vector<std::string>& pathnames,
-    const std::function<bool (const std::string&)>& addVisitedPath,
-    const std::function<void (const Plug_RegistrationMetadata&)>& addPlugin,
+    const boost::function<bool (const std::string&)>& addVisitedPath,
+    const boost::function<void (const Plug_RegistrationMetadata&)>& addPlugin,
     Plug_TaskArena* taskArena);
 
 /// Sets the paths to the bootstrap plug-path JSON files.

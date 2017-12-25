@@ -40,10 +40,10 @@
 #include "pxr/base/tf/stringUtils.h"
 #include "pxr/base/tf/type.h"
 
+#include <boost/bind.hpp>
+
 #include <tbb/concurrent_vector.h>
 #include <tbb/spin_mutex.h>
-
-#include <functional>
 
 using std::pair;
 using std::string;
@@ -151,12 +151,12 @@ PlugRegistry::_RegisterPlugins(const std::vector<std::string>& pathsToPlugInfo)
         // XXX -- Is this mutex really needed?
         std::lock_guard<std::mutex> lock(_mutex);
         Plug_ReadPlugInfo(pathsToPlugInfo,
-                          std::bind(
+                          boost::bind(
                               &PlugRegistry::_InsertRegisteredPluginPath,
-                              this, std::placeholders::_1),
-                          std::bind(
+                              this, _1),
+                          boost::bind(
                               &PlugRegistry::_RegisterPlugin<NewPluginsVec>,
-                              this, std::placeholders::_1, &newPlugins),
+                              this, _1, &newPlugins),
                           _dispatcher.get());
     }
 

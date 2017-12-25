@@ -44,8 +44,10 @@
 #include <Alembic/AbcGeom/Visibility.h>
 #include <Alembic/AbcCoreOgawa/All.h>
 #include <boost/function.hpp>
+#include <boost/bind.hpp>
 #include <boost/functional/hash.hpp>
 #include <algorithm>
+#include <memory>
 #include <set>
 #include <type_traits>
 
@@ -2269,7 +2271,7 @@ _WriteArbGeomParams(_PrimWriterContext* context)
     _WriteNamespacedPropertyGroup(context,
                                   UsdAbcPropertyNames->primvars,
                                   boost::bind(&_Parent::GetArbGeomParams,
-                                              boost::cref(parent)));
+                                            boost::cref(parent)));
 }
 
 static
@@ -2282,7 +2284,7 @@ _WriteUserProperties(_PrimWriterContext* context)
     _WriteNamespacedPropertyGroup(context,
                                   UsdAbcPropertyNames->userProperties,
                                   boost::bind(&_Parent::GetUserProperties,
-                                              boost::cref(parent)));
+                                            boost::cref(parent)));
     }
 
 static
